@@ -325,8 +325,11 @@ def enviar_mensajes_seguimiento(driver, worksheet, pendientes_seguimiento, fase_
     for contacto in pendientes_seguimiento:
         fila = contacto["fila"]
         nombre = contacto.get("Nombre", "amig@")
+        correo = contacto.get("Correo", "")
+        instagram = contacto.get("Instagram", "")
         telefono = str(contacto.get("Teléfono", "")).strip().replace(" ", "").replace("-", "")
         entrada_gratis = str(contacto.get("Entrada Gratis", "")).lower() == "true"
+        numero_rezago = contacto.get("Número de rezago", "").strip()
 
         if telefono.startswith("0"):
             telefono = "+52" + telefono[1:]
@@ -341,37 +344,36 @@ def enviar_mensajes_seguimiento(driver, worksheet, pendientes_seguimiento, fase_
 
         # Crear mensaje personalizado
         if entrada_gratis:
-            mensaje = f"""🎉 ¡Hola {nombre}!
+            mensaje = f"""🎉 ¡Hola {nombre}! ¡Felicidades! 🎉
 
-Gracias por participar en *Instant Moments*. 🎞️
+Participaste en *Instant Moments* y fuiste una de las primeras personas en responder.  
+🎁 ¡Has ganado una entrada gratis al Cine Tonalá!
 
-🎁 ¡Felicidades! Fuiste de los primeros en responder y ganaste una *entrada gratis* para Cine Tonalá (válida del 2 al 16 de julio).
+Consulta la cartelera y elige tu función 👉 https://www.cinetonala.mx/  
+Si tienes intención de asistir, confírmame por este medio.  
+Si no puedes o no te interesa, por favor avísame para poder regalar tu entrada a quien sigue 🙏
 
-🎬 Consulta la cartelera 👉 https://www.cinetonala.mx/
+Confirma que tus datos estén correctos porque el pase será enviado por correo electrónico:
 
-Si tienes intención de asistir, por favor confirma tus datos para enviarte el pase:
-📌 Nombre: {nombre}
-📌 Correo:
-📌 Instagram:
-📌 Teléfono:
+📌 Nombre: {nombre}  
+📌 Correo: {correo}  
+📌 Instagram: {instagram}  
+📌 Teléfono: {telefono}
 
-👉 *Confirma tu correo*, ya que Cine Tonalá lo usa para enviar los pases.
-
-¡Gracias por ser parte! 🙌"""
+Gracias por formar parte de este proyecto 📸  
+Sígueme para más dinámicas: https://www.instagram.com/yoali.spindola/"""
             tipo_mensaje = "Ganador - Entrada Gratis"
         else:
-            mensaje = f"""👋 ¡Hola {nombre}!
+            mensaje = f"""Hola {nombre}, ¡gracias por participar en *Instant Moments*!
 
-Gracias por responder a *Instant Moments* 🎞️
+Esta vez estuviste a solo {numero_rezago or "unos pocos"} mensajes de conseguir tu entrada gratis al cine 🎟️  
+Pero hay buenas noticias:
 
-Esta vez no fuiste de los primeros 12 en responder 😢, pero tu participación sigue siendo muy valiosa.
+🎯 Si alguno de los ganadores no reclama su pase, ¡iremos otorgándolos en orden!  
+📩 Además, el próximo mes tú serás de los primeros en recibir el aviso para participar en la siguiente fase.
 
-🎁 La prioridad para los próximos beneficios es aleatoria, ¡pero quienes han respondido antes tienen más oportunidades!
-
-Sigue al pendiente y sígueme en IG:
-📸 https://www.instagram.com/yoali.spindola/
-
-¡Gracias por participar y por tu energía! ✨"""
+Gracias por tu presencia y energía, seguimos en contacto.  
+📸 Sígueme para estar al tanto: https://www.instagram.com/yoali.spindola/"""
             tipo_mensaje = "Participante sin pase"
 
         # Enviar mensaje por WhatsApp
@@ -392,13 +394,13 @@ Sigue al pendiente y sígueme en IG:
             print(f"⚠️ Error enviando seguimiento a {nombre}: {razon}")
 
         # Espera entre mensajes
-        delay = random.randint(10, 32)
+        delay = random.randint(2, 5)
         print(f"⏳ Esperando {delay} segundos antes del siguiente seguimiento...")
         time.sleep(delay)
 
 # --- Función principal ---
 def main():
-    ENVIAR_WHATSAPP = True         # Envío de mensajes iniciales por WhatsApp
+    ENVIAR_WHATSAPP = False         # Envío de mensajes iniciales por WhatsApp
     ENVIAR_INSTAGRAM = False       # Envío por Instagram
     ENVIAR_SEGUIMIENTO = True      # Mensajes de seguimiento por WhatsApp
     FASE_ACTUAL = 1                # Número de fase actual
