@@ -2,9 +2,9 @@
 # 📤 Qué mensajes enviar hoy
 # ---------------------------
 ENVIAR_MENSAJES_INICIALES = False
-ENVIAR_RECORDATORIOS_CONFIRMACION = False
+ENVIAR_MENSAJES_RESULTADOS  = False
+ENVIAR_RECORDATORIOS_CONFIRMACION = True
 ENVIAR_MENSAJES_INTEGRACION = False
-ENVIAR_MENSAJES_RESULTADOS = False
 
 # ---------------------------
 # 🔄 Fase actual del proyecto
@@ -15,9 +15,11 @@ FASE_ACTUAL = 1
 # 🔐 Configuración general
 # ---------------------------
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-SPREADSHEET_ID = 'tu_id_aqui'
+SPREADSHEET_ID = '15kXq5wrYb9gJ0afeq_l82Fhj956gQryS1mB8OmzT5hI'
 HOJA_ACTIVA = 'W-IM'
-CREDENTIALS_FILE = 'credenciales.json'
+CREDENTIALS_FILE = "./credentials.json"
+CHROMEDRIVER_PATH = "C:/bin/chromedriver-win64/chromedriver.exe"
+CHROME_PROFILE_PATH = "C:/bin/whatsapp_profile"
 
 # ---------------------------
 # 📊 Columnas del Sheet
@@ -41,7 +43,9 @@ COLUMNAS = {
     "proxima_accion": "Próxima acción",
     "comentarios": "Comentarios / Seguimiento",
     "correo_verificado": "Correo Verificado",
-    "fases_participadas": "Fases participadas"
+    "recordatorio_confirmacion": "Recordatorio Enviado",
+    "fases_participadas": "Fases participadas",
+    "numero_rezago": "Número de rezago"
 }
 
 MENSAJES = {

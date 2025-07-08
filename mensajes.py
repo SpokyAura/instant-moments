@@ -1,6 +1,7 @@
 # mensajes.py
 
-def mensaje_convocatoria_inicial(nombre):
+def mensaje_convocatoria_inicial(contacto):
+    nombre = contacto.get("Nombre", "amig@")
     return f"""Hola {nombre}, ¡espero que estés muy bien!
 
 ¡Gracias por participar en *Instant Moments*, en alianza con *Cine Tonalá*!
@@ -18,7 +19,12 @@ Sígueme para estar al tanto de las dinámicas:
 📸 https://www.instagram.com/yoali.spindola/
 """
 
-def mensaje_ganador_entrada(nombre, correo, instagram, telefono):
+def mensaje_ganador_entrada(contacto):
+    nombre = contacto.get("Nombre", "amig@")
+    correo = contacto.get("Correo", "no especificado")
+    instagram = contacto.get("Instagram", "no especificado")
+    telefono = contacto.get("Teléfono", "no especificado")
+    
     return f"""Participaste en *Instant Moments* y fuiste una de las primeras personas en responder.  
 🎁 ¡Has ganado una entrada gratis al Cine Tonalá!
 
@@ -37,7 +43,9 @@ Gracias por formar parte de este proyecto 📸
 Sígueme para más dinámicas: https://www.instagram.com/yoali.spindola/
 """
 
-def mensaje_cercano_a_ganador(nombre, numero_rezago=None):
+def mensaje_cercano_a_ganador(contacto):
+    nombre = contacto.get("Nombre", "amig@")
+    numero_rezago = contacto.get("Número de rezago", None)
     return f"""Hola {nombre}, ¡gracias por participar en *Instant Moments*!  
 
 Esta vez estuviste a solo {numero_rezago or "unos pocos"} mensajes de conseguir tu entrada gratis al cine 🎟️  
@@ -50,7 +58,8 @@ Gracias por tu presencia y energía, seguimos en contacto.
 📸 Sígueme para estar al tanto: https://www.instagram.com/yoali.spindola/
 """
 
-def mensaje_integracion_futuras_fases(nombre):
+def mensaje_integracion_futuras_fases(contacto):
+    nombre = contacto.get("Nombre", "amig@")
     return f"""Hola {nombre}, gracias por ser parte de *Instant Moments* 📸  
 
 Estoy organizando nuevas fases del proyecto y me encantaría que sigas participando 💫  
@@ -69,29 +78,40 @@ Para enterarte de nuevas dinámicas, fechas y lugares para tomarte fotos:
 📍 https://www.instagram.com/yoali.spindola/
 """
 
-def mensaje_recordatorio_confirmacion(nombre, correo, instagram, telefono):
-    return f"""Hola {nombre}, solo paso a recordarte que fuiste seleccionad@ para recibir una entrada gratis por participar en *Instant Moments* 🎉  
+def mensaje_recordatorio_confirmacion(contacto):
+    nombre = contacto.get("Nombre", "amig@")
+    correo = contacto.get("Correo", "no proporcionado")
+    instagram = contacto.get("Instagram", "no proporcionado")
+    telefono = contacto.get("Teléfono", "no proporcionado")
 
-Aún no he recibido tu confirmación, y *hoy mismo* entregaré la lista final al *Cine Tonalá*.  
-Necesito incluir tu correo porque ahí se enviará tu entrada 🎟️📩
+    mensaje = f"""Hola {nombre},
 
-Confírmame si vas a asistir y que estos datos sean correctos:
+Quiero recordarte que tu pase gratis es válido todo el mes para la función de cine que quieras, excluyendo eventos presenciales como stand-ups y obras de teatro.
 
-📌 Nombre: {nombre}  
-📌 Correo: {correo}  
-📌 Instagram: {instagram}  
-📌 Teléfono: {telefono}
+No necesitas indicar cuál función elegir ni escoger asiento, solo presenta tu boleto digital en la entrada.
 
-🎬 El pase será válido para cualquier función de cine durante todo julio  
-(*excepto eventos presenciales como stand-up u obras de teatro*).  
-No necesitas escoger función ni asiento: solo preséntate con tu boleto digital.
+🧡 Es importante que confirmes tu correo, ya que es el medio que el cine usa para enviarte el pase. Hoy entregaré la lista y ojalá veas este mensaje.
 
-🍹 Además, recuerda que tienes *2x1 en coctelería y bebidas* mostrando tu foto,  
-las veces que quieras hasta *diciembre 2025*.
+Datos que tenemos registrados:  
+📧 Correo: {correo}  
+📸 Instagram: {instagram}  
+📱 Teléfono: {telefono}
 
-Gracias por ser parte de este proyecto 📸  
-Para estar al tanto de nuevas dinámicas, fechas y lugares para tomarte fotos, sígueme en Instagram:  
-👉 https://www.instagram.com/yoali.spindola/
+Estoy organizando nuevas fases del proyecto y me encantaría que sigas participando 💫  
+Para asegurar que recibas los avisos importantes, te pido algo muy simple:
 
-Espero tu respuesta pronto 🙂
-"""
+📲 *Agrega mi contacto como "Yoali Spíndola" o "Instant Moments" en tu agenda.*  
+WhatsApp a veces suspende mi cuenta por el volumen de mensajes durante las convocatorias,  
+pero si ya me tienes registrado, eso no sucede 🙂
+
+🎉 Además, recuerda que quienes participaron en este proyecto pueden disfrutar en *Cine Tonalá* de:
+
+🍹 *2x1 en coctelería y bebidas*  
+Solo presenta tu foto las veces que quieras hasta *diciembre 2025*"""
+
+#Para enterarte de nuevas dinámicas, fechas y lugares para tomarte fotos:  
+#📍 https://www.instagram.com/yoali.spindola/
+
+#Gracias por ser parte de *Instant Moments*."""
+
+    return mensaje

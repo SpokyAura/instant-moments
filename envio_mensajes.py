@@ -1,4 +1,4 @@
-import time
+import time, random
 import pyperclip
 from datetime import datetime
 from selenium.webdriver.common.by import By
@@ -6,22 +6,19 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
-from config import COLUMNAS
 
 def formatear_telefono(telefono):
-    """Devuelve el número de teléfono solo con dígitos, sin espacios, guiones ni signos."""
     return ''.join(filter(str.isdigit, str(telefono)))
 
 def enviar_mensaje(driver, telefono, mensaje):
-    """Envía un mensaje único a un número de WhatsApp usando Selenium."""
     try:
         telefono_formateado = formatear_telefono(telefono)
         url = f"https://wa.me/{telefono_formateado}"
         driver.get(url)
-        
+
         wait = WebDriverWait(driver, 15)
 
-        # Verificar si el número no es válido
+        # Comprobar número no válido
         try:
             error_element = wait.until(
                 EC.presence_of_element_located((By.XPATH, "//div[contains(text(), 'no es válido')]"))
@@ -46,10 +43,9 @@ def enviar_mensaje(driver, telefono, mensaje):
         btn_usar_wa.click()
         time.sleep(3)
 
-        # Esperar que cargue el área de chat
         wait.until(EC.presence_of_element_located((By.ID, "main")))
 
-        # Escribir el mensaje
+        # Escribir mensaje
         caja_mensaje = wait.until(
             EC.presence_of_element_located((By.XPATH, '//*[@id="main"]/footer/div[1]/div/span/div/div[2]/div/div[3]/div[1]/p'))
         )
@@ -59,7 +55,7 @@ def enviar_mensaje(driver, telefono, mensaje):
         caja_mensaje.send_keys(Keys.CONTROL, 'v')
         time.sleep(1)
 
-        # Enviar mensaje
+        # Enviar
         boton_enviar = wait.until(
             EC.element_to_be_clickable((By.XPATH, '//*[@id="main"]/footer/div[1]/div/span/div/div[2]/div/div[4]/button'))
         )
@@ -75,53 +71,55 @@ def enviar_mensaje(driver, telefono, mensaje):
         print(f"⚠️ Error inesperado al enviar mensaje: {e}")
         return False, f"otro error: {str(e)}"
 
-
 def agregar_fase_participada(contacto, fase_actual):
-    """
-    Añade la fase actual al campo 'Fases participadas' si no está ya.
-    """
-    fases = contacto.get(COLUMNAS["fases_participadas"], "").strip()
+    fases = contacto.get("Fases participadas", "").strip()
     fases_lista = [f.strip() for f in fases.split(",") if f.strip()]
     if str(fase_actual) not in fases_lista:
         fases_lista.append(str(fase_actual))
     return ", ".join(fases_lista)
 
+def enviar_mensajes_contactos(
+    driver, worksheet, contactos, fase_actual, generar_mensaje_func, columnas_idx,
+    seguimiento=None, proxima_accion=None, marcar_recordatorio=False
+):
+    print(f"📬 Iniciando envío con {len(contactos)} contactos desde {generar_mensaje_func.__name__}...")
 
-def enviar_mensajes_contactos(driver, worksheet, contactos, fase_actual, generar_mensaje_func):
-    """
-    Envía mensajes a una lista de contactos y actualiza la hoja de Google Sheets.
-    
-    Params:
-      - driver: Selenium WebDriver
-      - worksheet: objeto worksheet de gspread
-      - contactos: lista de diccionarios con datos
-      - fase_actual: número de fase actual (int o str)
-      - generar_mensaje_func: función que recibe un contacto y devuelve el texto personalizado
-    """
-    # Obtener índices de columnas para actualizar
-    col_mensaje = COLUMNAS["mensaje_wa_idx"]
-    col_fecha = COLUMNAS["fecha_wa_idx"]
-    col_hora = COLUMNAS["hora_wa_idx"]
-    col_interes = COLUMNAS["interes_idx"]
-    col_prox = COLUMNAS["proxima_accion_idx"]
-    col_fases = COLUMNAS["fases_participadas_idx"]
-    col_respondio = COLUMNAS["respondio_idx"]
-    col_entrada_gratis = COLUMNAS["entrada_gratis_idx"]
+    col_mensaje = columnas_idx["mensaje_enviado_wa"]
+    col_fecha = columnas_idx["fecha_envio_wa"]
+    col_hora = columnas_idx["hora_envio_wa"]
+    col_interes = columnas_idx["interes"]
+    col_prox = columnas_idx["proxima_accion"]
+    col_fases = columnas_idx["fases_participadas"]
+    col_respondio = columnas_idx["respondio"]
+    col_entrada_gratis = columnas_idx["entrada_gratis"]
+    col_correo_verificado = columnas_idx["correo_verificado"]
+    col_comentarios = columnas_idx.get("comentarios")
+    col_recordatorio = columnas_idx.get("recordatorio_confirmacion")
 
     for contacto in contactos:
         fila = contacto.get("fila")
-        nombre = contacto.get(COLUMNAS["nombre"], "amig@")
-        telefono = contacto.get(COLUMNAS["telefono"], "").strip()
+        nombre = contacto.get("Nombre", "amig@")
+        telefono = str(contacto.get("Teléfono", "")).strip()
+
         if not fila or not telefono:
             print(f"⏭️ Saltando contacto sin fila o teléfono: {nombre}")
-            continue  # Ignorar filas sin datos importantes
+            continue
 
-        respondio = str(contacto.get(COLUMNAS["respondio"], "")).strip().lower() == "true"
+        respondio = str(contacto.get("Respondió", "")).strip().lower() == "true"
         if not respondio:
             print(f"⏭️ {nombre} no ha respondido, saltando.")
             continue
 
-        mensaje = generar_mensaje_func(contacto)
+        try:
+            mensaje = generar_mensaje_func(
+                nombre,
+                contacto.get("Correo", ""),
+                contacto.get("Instagram", ""),
+                telefono
+            )
+        except TypeError:
+            mensaje = generar_mensaje_func(contacto)
+
         if not mensaje:
             print(f"⏭️ No se generó mensaje para {nombre}, saltando.")
             continue
@@ -139,10 +137,40 @@ def enviar_mensajes_contactos(driver, worksheet, contactos, fase_actual, generar
             nuevas_fases = agregar_fase_participada(contacto, fase_actual)
             worksheet.update_cell(fila, col_fases, nuevas_fases)
 
-            # Puedes actualizar la próxima acción aquí si quieres
-            # worksheet.update_cell(fila, col_prox, "Acción siguiente")
+            # Variables de estado
+            respondio = str(contacto.get("Respondió", "")).strip().lower() == "true"
+            entrada_gratis = str(contacto.get("Entrada Gratis", "")).strip().lower() == "true"
+            confirmo_asistencia = str(contacto.get("Confirmó Asistencia", "")).strip().lower() == "sí"
 
+            # Si no vienen desde auto_im.py, determinar automáticamente
+            if seguimiento is None:
+                if respondio and entrada_gratis and not confirmo_asistencia:
+                    seguimiento = "Ganador - Entrada Gratis"
+                elif respondio and not entrada_gratis:
+                    seguimiento = "Participante sin pase"
+
+            if proxima_accion is None:
+                if respondio and entrada_gratis and not confirmo_asistencia:
+                    proxima_accion = "Mandar mensaje Recordatorio de confirmación"
+                elif respondio and not entrada_gratis:
+                    proxima_accion = "Mandar mensaje"
+
+            # Si el mensaje es recordatorio de confirmación, forzar esta próxima acción
+            if generar_mensaje_func.__name__ == "mensaje_recordatorio_confirmacion":
+                proxima_accion = "Esperar confirmación"
+
+            if seguimiento and col_comentarios:
+                worksheet.update_cell(fila, col_comentarios, seguimiento)
+
+            if proxima_accion and col_prox:
+                worksheet.update_cell(fila, col_prox, proxima_accion)
+
+            # Marcar casilla de "Recordatorio Enviado" solo si estamos enviando recordatorios
+            if generar_mensaje_func.__name__ == "mensaje_recordatorio_confirmacion" and col_recordatorio:
+                worksheet.update_cell(fila, col_recordatorio, "TRUE")
         else:
             worksheet.update_cell(fila, col_mensaje, f"Error: {resultado}")
 
-        time.sleep(2)  # Pausa para evitar bloqueos o spam
+        pausa = random.randint(7, 16)
+        print(f"⏸️ Pausando {pausa} segundos antes de continuar...")
+        time.sleep(pausa)
