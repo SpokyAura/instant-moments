@@ -7,6 +7,16 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
+def anexar_fase(texto, fase_actual):
+    """
+    Reemplaza cualquier sufijo '(Fase X)' anterior por '(Fase fase_actual)'.
+    """
+    texto = texto.strip()
+    # Quitar cualquier sufijo (Fase número) al final del texto
+    texto = re.sub(r"\s*\(Fase \d+\)$", "", texto)
+    # Agregar nuevo sufijo
+    return f"{texto} (Fase {fase_actual})"
+
 def formatear_telefono(telefono):
     return ''.join(filter(str.isdigit, str(telefono)))
 
@@ -129,7 +139,7 @@ def enviar_mensajes_contactos(
 
         ahora = datetime.now()
         if exito:
-            worksheet.update_cell(fila, col_mensaje, resultado)
+            worksheet.update_cell(fila, col_mensaje, anexar_fase(resultado, fase_actual))
             worksheet.update_cell(fila, col_fecha, ahora.strftime("%Y-%m-%d"))
             worksheet.update_cell(fila, col_hora, ahora.strftime("%H:%M:%S"))
             worksheet.update_cell(fila, col_interes, "Alto")
@@ -137,12 +147,10 @@ def enviar_mensajes_contactos(
             nuevas_fases = agregar_fase_participada(contacto, fase_actual)
             worksheet.update_cell(fila, col_fases, nuevas_fases)
 
-            # Variables de estado
             respondio = str(contacto.get("Respondió", "")).strip().lower() == "true"
             entrada_gratis = str(contacto.get("Entrada Gratis", "")).strip().lower() == "true"
             confirmo_asistencia = str(contacto.get("Confirmó Asistencia", "")).strip().lower() == "sí"
 
-            # Si no vienen desde auto_im.py, determinar automáticamente
             if seguimiento is None:
                 if respondio and entrada_gratis and not confirmo_asistencia:
                     seguimiento = "Ganador - Entrada Gratis"
@@ -155,19 +163,18 @@ def enviar_mensajes_contactos(
                 elif respondio and not entrada_gratis:
                     proxima_accion = "Mandar mensaje"
 
-            # Si el mensaje es recordatorio de confirmación, forzar esta próxima acción
             if generar_mensaje_func.__name__ == "mensaje_recordatorio_confirmacion":
                 proxima_accion = "Esperar confirmación"
 
             if seguimiento and col_comentarios:
-                worksheet.update_cell(fila, col_comentarios, seguimiento)
+                worksheet.update_cell(fila, col_comentarios, anexar_fase(seguimiento, fase_actual))
 
             if proxima_accion and col_prox:
-                worksheet.update_cell(fila, col_prox, proxima_accion)
+                worksheet.update_cell(fila, col_prox, anexar_fase(proxima_accion, fase_actual))
 
-            # Marcar casilla de "Recordatorio Enviado" solo si estamos enviando recordatorios
             if generar_mensaje_func.__name__ == "mensaje_recordatorio_confirmacion" and col_recordatorio:
                 worksheet.update_cell(fila, col_recordatorio, "TRUE")
+
         else:
             worksheet.update_cell(fila, col_mensaje, f"Error: {resultado}")
 

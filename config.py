@@ -3,13 +3,16 @@
 # ---------------------------
 ENVIAR_MENSAJES_INICIALES = False
 ENVIAR_MENSAJES_RESULTADOS  = False
-ENVIAR_RECORDATORIOS_CONFIRMACION = True
+ENVIAR_RECORDATORIOS_CONFIRMACION = False
 ENVIAR_MENSAJES_INTEGRACION = False
+REVISION_RESPUESTAS = False
+LOG_DATOS = True
 
 # ---------------------------
 # 🔄 Fase actual del proyecto
 # ---------------------------
-FASE_ACTUAL = 1
+NUMERO_ENTRADAS_POR_FASE = 30
+FASE_ACTUAL = 2
 
 # ---------------------------
 # 🔐 Configuración general
@@ -25,7 +28,9 @@ CHROME_PROFILE_PATH = "C:/bin/whatsapp_profile"
 # 📊 Columnas del Sheet
 # ---------------------------
 COLUMNAS = {
+    "prioridad": "Prioridad",
     "añadio_contacto": "Añadió Contacto",
+    "fecha_añadir": "Fecha Añadir",
     "nombre": "Nombre",
     "correo": "Correo",
     "instagram": "Instagram",
@@ -45,7 +50,10 @@ COLUMNAS = {
     "correo_verificado": "Correo Verificado",
     "recordatorio_confirmacion": "Recordatorio Enviado",
     "fases_participadas": "Fases participadas",
-    "numero_rezago": "Número de rezago"
+    "numero_rezago": "Número de rezago",
+    "recibio_pase": "Recibió Pase",
+    "asistio": "Asisitió",
+    "acompañantes": "Acompañantes",
 }
 
 MENSAJES = {

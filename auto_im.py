@@ -11,7 +11,12 @@ from config import (
     ENVIAR_RECORDATORIOS_CONFIRMACION,
     ENVIAR_MENSAJES_INTEGRACION,
     ENVIAR_MENSAJES_RESULTADOS,
+    REVISION_RESPUESTAS,
+    LOG_DATOS
 )
+
+# Inicializa el archivo de log solo si está activado el flag
+inicializar_log()
 
 from sheets_utils import conectar_sheets, obtener_todas_las_filas, obtener_indices_columnas, actualizar_interes_alto_batch
 from envio_mensajes import enviar_mensajes_contactos
@@ -22,6 +27,8 @@ from mensajes import (
     mensaje_recordatorio_confirmacion,
     mensaje_integracion_futuras_fases,
 )
+from revisar_respuestas import revisar_respuestas
+from log_fases import inicializar_log, registrar_estadistica
 
 def iniciar_driver():
     """Inicia el driver de Chrome con el perfil y opciones necesarias."""
@@ -111,10 +118,17 @@ def main():
         print(f"✉️ Enviando recordatorio a ganadores pendientes ({len(contactos_ganadores_pendientes)})...")
         enviar_mensajes_contactos(driver, worksheet, contactos_ganadores_pendientes, FASE_ACTUAL, mensaje_recordatorio_confirmacion,
             columnas_idx,
-            marcar_recordatorio=True  # Activar marca de Recordatorio Enviado
+            marcar_recordatorio=True
         )
     else:
         print("✉️ Saltando envío de recordatorios de confirmación.")
+
+    if REVISION_RESPUESTAS:
+        print("🔍 Revisando respuestas recibidas y asignando entradas gratis...")
+        ganadores = revisar_respuestas(hoja_datos, COLUMNAS)
+        print(f"🏆 Ganadores asignados: {len(ganadores)} contactos.")
+    else:
+        print("🔍 Saltando revisión automática de respuestas.")
 
     if ENVIAR_MENSAJES_INTEGRACION:
         print(f"✉️ Enviando mensajes de integración a {len(contactos_respondieron)} contactos que respondieron...")
@@ -124,6 +138,16 @@ def main():
 
     print("✅ Finalizado envío de mensajes.")
     driver.quit()
+
+    if LOG_DATOS:
+        registrar_estadistica(
+            fase=FASE_ACTUAL,
+            mensajes_enviados=len(contactos_enviados),
+            respuestas_recibidas=len(contactos_respondieron),
+            entradas_gratis=sum(1 for c in contactos_enviados if c.get("Entrada Gratis") == True),
+            comentarios=f"Resumen fase {FASE_ACTUAL}"
+        )
+        print(f"📊 Estadísticas de fase {FASE_ACTUAL} registradas en log_fases.csv")
 
 if __name__ == "__main__":
     main()
