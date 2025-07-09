@@ -1,153 +1,172 @@
-"""
-revisar_respuestas.py
-Flujo completo para:
-- Ordenar contactos según méritos y participación previa (usando ordenar_por_prioridad_y_actualizar)
-- Leer respuestas recibidas vía WhatsApp (simulado)
-- Marcar 'Respondió' para quienes respondieron
-- Asignar 'Entrada Gratis' a los primeros N según prioridad
-- Actualizar 'Número de rezago' para quienes respondieron pero no ganaron
-Requiere:
-- sheets_utils.py con funciones para conexión y actualización de hoja
-- config.py con configuraciones y columnas definidas
-"""
 import random
+import traceback
 from sheets_utils import conectar_sheets, obtener_indices_columnas, escribir_en_celda
 from config import COLUMNAS, FASE_ACTUAL, NUMERO_ENTRADAS_POR_FASE
+from whatsapp_lector import obtener_mensajes_whatsapp_desde_selenium as obtener_mensajes_whatsapp
+from logger_config import logger
 
 def normalizar_telefono(tel):
-    """Normaliza teléfono para comparación: solo dígitos."""
-    return ''.join(filter(str.isdigit, str(tel)))
+    try:
+        return ''.join(filter(str.isdigit, str(tel)))
+    except Exception as e:
+        logger.warning(f"Error normalizando teléfono '{tel}': {e}")
+        return ""
 
 def parse_fases(fases_str):
-    """
-    Convierte cadena "1,2,5" a lista ['1','2','5'], ignorando no numéricos o vacíos.
-    """
-    if not fases_str:
+    try:
+        if not fases_str:
+            return []
+        return [f.strip() for f in fases_str.split(',') if f.strip().isdigit()]
+    except Exception as e:
+        logger.warning(f"Error parseando fases '{fases_str}': {e}")
         return []
-    return [f.strip() for f in fases_str.split(',') if f.strip().isdigit()]
 
 def ordenar_por_prioridad_y_actualizar(hoja_datos, columnas):
-    """
-    Ordena contactos según participación, asistencia y pases.
-    Actualiza la columna 'Prioridad' en la hoja.
-    Retorna la lista ordenada con datos y fila.
-    """
+    try:
+        registros = hoja_datos.get_all_records()
+        meritocracia = []
+        sin_participacion = []
 
-    registros = hoja_datos.get_all_records()
+        for idx, c in enumerate(registros):
+            try:
+                fases_participadas = parse_fases(c.get(columnas["fases_participadas"], ""))
+                recibio_pases = parse_fases(c.get(columnas["recibio_pase"], ""))
+                asistio = int(c.get(columnas["asistio"], 0) or 0)
 
-    meritocracia = []
-    sin_participacion = []
+                registro = {
+                    "fila": idx + 2,
+                    "datos": c,
+                    "num_fases": len(fases_participadas),
+                    "num_asistencias": asistio,
+                    "num_pases": len(recibio_pases)
+                }
 
-    for idx, c in enumerate(registros):
-        fases_participadas = parse_fases(c.get(columnas["fases_participadas"], ""))
-        recibio_pases = parse_fases(c.get(columnas["recibio_pase"], ""))
-        asistio = int(c.get(columnas["asistio"], 0) or 0)
+                if registro["num_fases"] > 0:
+                    meritocracia.append(registro)
+                else:
+                    sin_participacion.append(registro)
+            except Exception as e:
+                logger.warning(f"Error procesando registro índice {idx}: {e}")
+                logger.debug(traceback.format_exc())
 
-        registro = {
-            "fila": idx + 2,  # +2 porque la fila 1 es encabezado
-            "datos": c,
-            "num_fases": len(fases_participadas),
-            "num_asistencias": asistio,
-            "num_pases": len(recibio_pases)
-        }
-
-        if registro["num_fases"] > 0:
-            meritocracia.append(registro)
-        else:
-            sin_participacion.append(registro)
-
-    # Orden rígido para quienes participaron
-    contactos_merito = sorted(
-        meritocracia,
-        key=lambda x: (
-            -x["num_fases"],
-            -x["num_asistencias"],
-            x["num_pases"]
+        contactos_merito = sorted(
+            meritocracia,
+            key=lambda x: (-x["num_fases"], -x["num_asistencias"], x["num_pases"])
         )
-    )
 
-    # Aleatorizar los que nunca participaron
-    random.shuffle(sin_participacion)
+        random.shuffle(sin_participacion)
+        orden_final = contactos_merito + sin_participacion
 
-    # Unión final: primero mérito, luego aleatorio
-    orden_final = contactos_merito + sin_participacion
+        try:
+            col_prioridad = list(columnas.values()).index(columnas["prioridad"]) + 1
+        except Exception as e:
+            logger.error(f"Error encontrando columna Prioridad: {e}")
+            return orden_final
 
-    # Actualizar la columna Prioridad
-    col_prioridad = list(columnas.values()).index(columnas["prioridad"]) + 1
-    for i, registro in enumerate(orden_final, start=1):
-        escribir_en_celda(hoja_datos, registro["fila"], col_prioridad, i)
+        for i, registro in enumerate(orden_final, start=1):
+            try:
+                escribir_en_celda(hoja_datos, registro["fila"], col_prioridad, i)
+            except Exception as e:
+                logger.warning(f"Error actualizando prioridad fila {registro['fila']}: {e}")
 
-    return orden_final
-
-def obtener_mensajes_whatsapp():
-    """
-    Simulación de lectura de mensajes WhatsApp.
-    Debes reemplazarlo con tu implementación real.
-    Retorna lista de (telefono, timestamp, mensaje).
-    """
-    mensajes_simulados = [
-        ('5512345678', 1620000000, 'Quiero participar'),
-        ('5598765432', 1620000500, '¡Cuenta conmigo!'),
-        ('5511122233', 1620001000, 'Hola, me anoto'),
-    ]
-    return mensajes_simulados
+        return orden_final
+    except Exception as e:
+        logger.error(f"Error en ordenar_por_prioridad_y_actualizar: {e}")
+        logger.debug(traceback.format_exc())
+        return []
 
 def revisar_respuestas():
-    hoja = conectar_sheets()
-    columnas_idx = obtener_indices_columnas(hoja)
-    registros = hoja.get_all_records()
+    try:
+        hoja = conectar_sheets()
+        columnas_idx = obtener_indices_columnas(hoja)
+        registros = hoja.get_all_records()
 
-    # 1. Ordenar contactos por prioridad y actualizar columna
-    ordenados = ordenar_por_prioridad_y_actualizar(hoja, COLUMNAS)
+        ordenados = ordenar_por_prioridad_y_actualizar(hoja, COLUMNAS)
 
-    # 2. Obtener mensajes WhatsApp y normalizar teléfonos
-    mensajes = obtener_mensajes_whatsapp()
-    mensajes.sort(key=lambda x: x[1])  # Ordenar por tiempo ascendente
-    telefonos_respondieron = [normalizar_telefono(t[0]) for t in mensajes]
+        mensajes = obtener_mensajes_whatsapp()
+        mensajes.sort(key=lambda x: x[1])
 
-    # 3. Crear mapa teléfono -> fila para rápido acceso
-    telefono_a_fila = {}
-    for r in ordenados:
-        tel_norm = normalizar_telefono(r["datos"].get(COLUMNAS["telefono"], ""))
-        if tel_norm:
-            telefono_a_fila[tel_norm] = r["fila"]
+        telefono_orden = {}
+        orden_actual_max = 0
 
-    col_respondio = columnas_idx["respondio"]
-    col_entrada = columnas_idx["entrada_gratis"]
-    col_rezago = columnas_idx["numero_rezago"]
+        col_orden_respuesta = columnas_idx.get("orden_respuesta")
 
-    ganadores = set()
+        for r in registros:
+            try:
+                valor = r.get(COLUMNAS["orden_respuesta"], "")
+                if str(valor).strip().isdigit():
+                    orden_actual_max = max(orden_actual_max, int(valor))
+            except Exception:
+                pass
 
-    # 4. Marcar 'Respondió' para quienes respondieron
-    for tel in telefonos_respondieron:
-        if tel in telefono_a_fila:
-            fila = telefono_a_fila[tel]
-            escribir_en_celda(hoja, fila, col_respondio, True)
+        nuevos_mensajes = []
 
-    # 5. Asignar 'Entrada Gratis' a primeros N según orden priorizado
-    for idx, contacto in enumerate(ordenados):
-        fila = contacto["fila"]
-        tel = normalizar_telefono(contacto["datos"].get(COLUMNAS["telefono"], ""))
-        respondio = tel in telefonos_respondieron
+        for tel, _, _ in mensajes:
+            tel_norm = normalizar_telefono(tel)
+            if tel_norm not in telefono_orden:
+                orden_actual_max += 1
+                telefono_orden[tel_norm] = orden_actual_max
+                nuevos_mensajes.append((tel_norm, orden_actual_max))
 
-        if respondio and idx < NUMERO_ENTRADAS_POR_FASE:
-            escribir_en_celda(hoja, fila, col_entrada, True)
-            ganadores.add(tel)
-        else:
-            # Si respondió pero no ganó, marcar Entrada Gratis False
-            if respondio:
-                escribir_en_celda(hoja, fila, col_entrada, False)
+        telefono_a_fila = {}
+        for r in ordenados:
+            try:
+                tel_norm = normalizar_telefono(r["datos"].get(COLUMNAS["telefono"], ""))
+                if tel_norm:
+                    telefono_a_fila[tel_norm] = r["fila"]
+            except Exception as e:
+                logger.warning(f"Error creando mapa teléfono->fila fila {r.get('fila')}: {e}")
 
-                # Actualizar número de rezago agregando la fase actual
-                registro = contacto["datos"]
-                rezagos_previos = registro.get(COLUMNAS["numero_rezago"], "")
-                fases = set(rezagos_previos.split(",")) if rezagos_previos else set()
-                fases.add(str(FASE_ACTUAL))
-                nuevo_rezago = ",".join(sorted(fases, key=int))
-                escribir_en_celda(hoja, fila, col_rezago, nuevo_rezago)
+        col_respondio = columnas_idx.get("respondio")
+        col_entrada = columnas_idx.get("entrada_gratis")
+        col_rezago = columnas_idx.get("numero_rezago")
 
-    print(f"Proceso completado. Ganadores asignados: {len(ganadores)}")
-    return ganadores
+        ganadores = set()
+
+        for tel, orden_resp in nuevos_mensajes:
+            if tel in telefono_a_fila:
+                fila = telefono_a_fila[tel]
+                try:
+                    escribir_en_celda(hoja, fila, col_respondio, True)
+                    if col_orden_respuesta:
+                        escribir_en_celda(hoja, fila, col_orden_respuesta, orden_resp)
+                except Exception as e:
+                    logger.warning(f"Error actualizando fila {fila}: {e}")
+
+        respondieron = [
+            (tel, orden) for tel, orden in telefono_orden.items() if tel in telefono_a_fila
+        ]
+        respondieron.sort(key=lambda x: x[1])
+
+        ultimos_n = respondieron[-NUMERO_ENTRADAS_POR_FASE:] if len(respondieron) >= NUMERO_ENTRADAS_POR_FASE else respondieron
+        set_ganadores = set(tel for tel, _ in ultimos_n)
+
+        max_orden = max(orden for _, orden in ultimos_n) if ultimos_n else 0
+
+        for contacto in ordenados:
+            fila = contacto["fila"]
+            try:
+                tel = normalizar_telefono(contacto["datos"].get(COLUMNAS["telefono"], ""))
+                if tel in telefono_orden:
+                    orden_resp = telefono_orden[tel]
+                    if tel in set_ganadores:
+                        escribir_en_celda(hoja, fila, col_entrada, True)
+                        escribir_en_celda(hoja, fila, col_rezago, "")
+                        ganadores.add(tel)
+                    else:
+                        escribir_en_celda(hoja, fila, col_entrada, False)
+                        rezago = max_orden - orden_resp
+                        escribir_en_celda(hoja, fila, col_rezago, str(rezago))
+            except Exception as e:
+                logger.warning(f"Error procesando fila {fila}: {e}")
+
+        logger.info(f"Proceso completado. Ganadores asignados: {len(ganadores)}")
+        return ganadores
+
+    except Exception as e:
+        logger.error(f"Error general en revisar_respuestas: {e}")
+        logger.debug(traceback.format_exc())
+        return set()
 
 if __name__ == "__main__":
     revisar_respuestas()

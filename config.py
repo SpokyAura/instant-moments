@@ -1,3 +1,5 @@
+# config.py
+
 # ---------------------------
 # 📤 Qué mensajes enviar hoy
 # ---------------------------
@@ -50,6 +52,7 @@ COLUMNAS = {
     "correo_verificado": "Correo Verificado",
     "recordatorio_confirmacion": "Recordatorio Enviado",
     "fases_participadas": "Fases participadas",
+    "orden_respuesta": "Orden de Respuesta",
     "numero_rezago": "Número de rezago",
     "recibio_pase": "Recibió Pase",
     "asistio": "Asisitió",

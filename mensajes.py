@@ -1,7 +1,11 @@
-# mensajes.py
+def _obtener_nombre(contacto):
+    return contacto.get("Nombre") or "amig@"
+
+def _obtener_valor(contacto, clave, defecto="no especificado"):
+    return contacto.get(clave) or defecto
 
 def mensaje_convocatoria_inicial(contacto):
-    nombre = contacto.get("Nombre", "amig@")
+    nombre = _obtener_nombre(contacto)
     return f"""Hola {nombre}, ¡espero que estés muy bien!
 
 ¡Gracias por participar en *Instant Moments*, en alianza con *Cine Tonalá*!
@@ -20,11 +24,11 @@ Sígueme para estar al tanto de las dinámicas:
 """
 
 def mensaje_ganador_entrada(contacto):
-    nombre = contacto.get("Nombre", "amig@")
-    correo = contacto.get("Correo", "no especificado")
-    instagram = contacto.get("Instagram", "no especificado")
-    telefono = contacto.get("Teléfono", "no especificado")
-    
+    nombre = _obtener_nombre(contacto)
+    correo = _obtener_valor(contacto, "Correo")
+    instagram = _obtener_valor(contacto, "Instagram")
+    telefono = _obtener_valor(contacto, "Teléfono")
+
     return f"""Participaste en *Instant Moments* y fuiste una de las primeras personas en responder.  
 🎁 ¡Has ganado una entrada gratis al Cine Tonalá!
 
@@ -44,11 +48,11 @@ Sígueme para más dinámicas: https://www.instagram.com/yoali.spindola/
 """
 
 def mensaje_cercano_a_ganador(contacto):
-    nombre = contacto.get("Nombre", "amig@")
-    numero_rezago = contacto.get("Número de rezago", None)
+    nombre = _obtener_nombre(contacto)
+    numero_rezago = contacto.get("Número de rezago") or "unos pocos"
     return f"""Hola {nombre}, ¡gracias por participar en *Instant Moments*!  
 
-Esta vez estuviste a solo {numero_rezago or "unos pocos"} mensajes de conseguir tu entrada gratis al cine 🎟️  
+Esta vez estuviste a solo {numero_rezago} mensajes de conseguir tu entrada gratis al cine 🎟️  
 Pero hay buenas noticias:
 
 🎯 Si alguno de los ganadores no reclama su pase, ¡iremos otorgándolos en orden!  
@@ -59,7 +63,7 @@ Gracias por tu presencia y energía, seguimos en contacto.
 """
 
 def mensaje_integracion_futuras_fases(contacto):
-    nombre = contacto.get("Nombre", "amig@")
+    nombre = _obtener_nombre(contacto)
     return f"""Hola {nombre}, gracias por ser parte de *Instant Moments* 📸  
 
 Estoy organizando nuevas fases del proyecto y me encantaría que sigas participando 💫  
@@ -79,12 +83,12 @@ Para enterarte de nuevas dinámicas, fechas y lugares para tomarte fotos:
 """
 
 def mensaje_recordatorio_confirmacion(contacto):
-    nombre = contacto.get("Nombre", "amig@")
-    correo = contacto.get("Correo", "no proporcionado")
-    instagram = contacto.get("Instagram", "no proporcionado")
-    telefono = contacto.get("Teléfono", "no proporcionado")
+    nombre = _obtener_nombre(contacto)
+    correo = _obtener_valor(contacto, "Correo", "no proporcionado")
+    instagram = _obtener_valor(contacto, "Instagram", "no proporcionado")
+    telefono = _obtener_valor(contacto, "Teléfono", "no proporcionado")
 
-    mensaje = f"""Hola {nombre},
+    return f"""Hola {nombre},
 
 Quiero recordarte que tu pase gratis es válido todo el mes para la función de cine que quieras, excluyendo eventos presenciales como stand-ups y obras de teatro.
 
@@ -108,10 +112,3 @@ pero si ya me tienes registrado, eso no sucede 🙂
 
 🍹 *2x1 en coctelería y bebidas*  
 Solo presenta tu foto las veces que quieras hasta *diciembre 2025*"""
-
-#Para enterarte de nuevas dinámicas, fechas y lugares para tomarte fotos:  
-#📍 https://www.instagram.com/yoali.spindola/
-
-#Gracias por ser parte de *Instant Moments*."""
-
-    return mensaje
