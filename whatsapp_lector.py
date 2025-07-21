@@ -6,7 +6,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
-from config import CHROMEDRIVER_PATH, PROFILE_PATH
+from config import CHROMEDRIVER_PATH, CHROME_PROFILE_PATH
 from logger_config import logger
 
 def obtener_mensajes_whatsapp_desde_selenium(n_max=None):
@@ -15,7 +15,7 @@ def obtener_mensajes_whatsapp_desde_selenium(n_max=None):
     Devuelve una lista de tuplas: (telefono, orden_de_respuesta, preview)
     """
     options = Options()
-    options.add_argument(f"user-data-dir={PROFILE_PATH}")
+    options.add_argument(f"user-data-dir={CHROME_PROFILE_PATH}")
     service = Service(CHROMEDRIVER_PATH)
     driver = webdriver.Chrome(service=service, options=options)
     wait = WebDriverWait(driver, 30)

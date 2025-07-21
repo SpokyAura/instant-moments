@@ -10,7 +10,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException
 
 # Importa el logger ya configurado (ajusta el nombre del módulo según tu proyecto)
-from logger_config import logger
+from logger_config import logger 
+from orden_prioridad import clasificar_contacto
 
 def anexar_fase(texto, fase_actual):
     try:
@@ -126,6 +127,8 @@ def enviar_mensajes_contactos(
         return
 
     for contacto in contactos:
+        seguimiento = None
+        proxima_accion = None
         fila = contacto.get("fila")
         nombre = contacto.get("Nombre", "amig@")
         telefono = str(contacto.get("Teléfono", "")).strip()
@@ -166,25 +169,25 @@ def enviar_mensajes_contactos(
                 worksheet.update_cell(fila, col_mensaje, anexar_fase(resultado, fase_actual))
                 worksheet.update_cell(fila, col_fecha, ahora.strftime("%Y-%m-%d"))
                 worksheet.update_cell(fila, col_hora, ahora.strftime("%H:%M:%S"))
-                worksheet.update_cell(fila, col_interes, "Alto")
 
                 nuevas_fases = agregar_fase_participada(contacto, fase_actual)
                 worksheet.update_cell(fila, col_fases, nuevas_fases)
 
-                respondio = str(contacto.get("Respondió", "")).strip().lower() == "true"
-                entrada_gratis = str(contacto.get("Entrada Gratis", "")).strip().lower() == "true"
+                clasificacion = clasificar_contacto(contacto)
                 confirmo_asistencia = str(contacto.get("Confirmó Asistencia", "")).strip().lower() == "sí"
 
+                logger.info(f"Contacto {contacto.get('Nombre')} clasificado como '{clasificacion}'.")
+
                 if seguimiento is None:
-                    if respondio and entrada_gratis and not confirmo_asistencia:
+                    if clasificacion == "ganador" and not confirmo_asistencia:
                         seguimiento = "Ganador - Entrada Gratis"
-                    elif respondio and not entrada_gratis:
+                    elif clasificacion == "cercano":
                         seguimiento = "Participante sin pase"
 
                 if proxima_accion is None:
-                    if respondio and entrada_gratis and not confirmo_asistencia:
+                    if clasificacion == "ganador" and not confirmo_asistencia:
                         proxima_accion = "Mandar mensaje Recordatorio de confirmación"
-                    elif respondio and not entrada_gratis:
+                    elif clasificacion == "cercano":
                         proxima_accion = "Mandar mensaje"
 
                 if generar_mensaje_func.__name__ == "mensaje_recordatorio_confirmacion":

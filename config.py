@@ -8,13 +8,18 @@ ENVIAR_MENSAJES_RESULTADOS  = False
 ENVIAR_RECORDATORIOS_CONFIRMACION = False
 ENVIAR_MENSAJES_INTEGRACION = False
 REVISION_RESPUESTAS = False
-LOG_DATOS = True
+LOG_DATOS = False
+
+# ---------------------------
+# 📤 Funciones de Instagram
+# ---------------------------
+ACTIVAR_REVISION_IG = True
 
 # ---------------------------
 # 🔄 Fase actual del proyecto
 # ---------------------------
 NUMERO_ENTRADAS_POR_FASE = 30
-FASE_ACTUAL = 2
+FASE_ACTUAL = 1
 
 # ---------------------------
 # 🔐 Configuración general

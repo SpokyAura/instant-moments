@@ -14,10 +14,17 @@ from config import (
     ENVIAR_MENSAJES_INTEGRACION,
     ENVIAR_MENSAJES_RESULTADOS,
     REVISION_RESPUESTAS,
-    LOG_DATOS
+    LOG_DATOS,
+    ACTIVAR_REVISION_IG
 )
 
-from sheets_utils import conectar_sheets, obtener_todas_las_filas, obtener_indices_columnas, actualizar_interes_alto_batch
+from sheets_utils import (
+    conectar_sheets,
+    obtener_todas_las_filas,
+    obtener_indices_columnas,
+    actualizar_interes_alto_batch,
+    sincronizar_interes
+)
 from envio_mensajes import enviar_mensajes_contactos
 from mensajes import (
     mensaje_convocatoria_inicial,
@@ -28,6 +35,7 @@ from mensajes import (
 )
 from revisar_respuestas import revisar_respuestas
 from log_fases import inicializar_log, registrar_estadistica
+
 
 from logger_config import logger  # <--- Importamos el logger
 
@@ -70,6 +78,7 @@ def main():
 
         logger.info("Obteniendo índices de columnas...")
         columnas_idx = obtener_indices_columnas(worksheet)
+        sincronizar_interes(worksheet, columnas_idx["respondio"], columnas_idx["interes"])
 
         logger.info("Actualizando interés a Alto para contactos con Respondió o Entrada Gratis...")
         actualizar_interes_alto_batch(worksheet, contactos, columnas_idx)
@@ -199,6 +208,16 @@ def main():
             logger.info(f"Estadísticas de fase {FASE_ACTUAL} registradas en log_fases.csv")
     except Exception as e:
         logger.error(f"Error al registrar estadísticas o procesar datos finales: {e}", exc_info=True)
+        
+    try:
+        if ACTIVAR_REVISION_IG:
+            logger.info("Iniciando revisión de perfiles de Instagram...")
+            from ig_utils.verificar_perfiles import revisar_perfiles_instagram
+            revisar_perfiles_instagram()
+        else:
+            logger.info("Revisión de perfiles IG desactivada por configuración.")
+    except Exception as e:
+        logger.error(f"Error al revisar perfiles de Instagram: {e}", exc_info=True)
 
 if __name__ == "__main__":
     main()
