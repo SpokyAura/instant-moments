@@ -1,3 +1,17 @@
+"""
+wa_ig_login.py
+
+Este módulo contiene funciones para iniciar sesión automatizada en WhatsApp Web e Instagram utilizando Selenium.
+
+Propósito:
+- Abrir una instancia del navegador (Chrome) con una sesión de usuario persistente.
+- Navegar a las URLs correspondientes para que el usuario inicie sesión manualmente en WhatsApp e Instagram si no lo ha hecho aún.
+- Este archivo no ejecuta tareas automatizadas ni controla la lógica del flujo general.
+
+Uso recomendado:
+- Solo se invoca para iniciar sesión manualmente.
+"""
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
